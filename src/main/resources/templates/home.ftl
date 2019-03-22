@@ -28,7 +28,6 @@
 <!-- Main Content -->
 <div class="container">
     <div class="row">
-
         <div class="col-lg-8 col-md-10 mx-auto">
             <#list list as articuloComentario>
                 <div class="post-preview">
@@ -38,15 +37,18 @@
                     <p class="post-meta">Posted by ${articuloComentario.getUser().getName()}
                         on ${articuloComentario.getFecha()?string.long}</p>
                     <h6 class="post-subtitle">${articuloComentario.getTeaser()}</h6>
-                    <#--<p class="post-meta"> ${articuloComentario.getStringEtiqueta()}</p>-->
                     <ul>
                         <#list articuloComentario.getLabels() as etiqueta>
-                            <li><a href="#" class="badge badge-light">${etiqueta.getLabelText()}</a></li>
+                            <li><a href="/Articles/${etiqueta.getLabelText()}"
+                                   class="badge badge-light">${etiqueta.getLabelText()}</a></li>
                         </#list>
                     </ul>
                     <#if usuario != "other">
-                        <#--onclick="window.location.href = 'https://w3docs.com';"-->
-                        <div class="articuloId" id="${articuloComentario.getId()}"><button type="button" id="likeButton" class="btn btn-outline-primary float-left"> ${articuloComentario.getLikes()} Heart!</button></div>
+                        <div class="articuloId" id="${articuloComentario.getId()}">
+                            <button type="button" id="likeButton"
+                                    class="btn btn-outline-primary float-left"> ${articuloComentario.getLikes()} Heart!
+                            </button>
+                        </div>
                     </#if>
                     <#assign usuarioAutor="${articuloComentario.getUser().getId()}">
                     <#if  usuario =="admin" || currentUserId == usuarioAutor>
@@ -56,14 +58,27 @@
                         </div>
                     </#if>
                 </div>
-                <hr>
+                <br>
+                <br>
             </#list>
+            <div class="clearfix">
+                <#--<#if currentPagina+1 lt ultimaPagina>-->
+                <#if !fromLabel>
+                    <#if nextPagina-1 != ultimaPagina>
+                        <a class="btn btn-primary float-right" href="/?page=${nextPagina}">Older Posts &rarr;</a>
+                    </#if>
+                    <#if nextPagina gt 2>
+                        <a class="btn btn-primary float-right" href="/?page=${pastPagina}"> &larr; Newer Posts</a>
+                    </#if>
+                </#if>
+            </div>
         </div>
     </div>
 </div>
-<hr><#include "footer.ftl">
+<hr>
 
-<!-- Bootstrap core JavaScript -->
+<#include "footer.ftl">
+
 <script
         src="http://code.jquery.com/jquery-3.3.1.min.js"
         integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="

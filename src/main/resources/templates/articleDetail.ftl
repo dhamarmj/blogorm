@@ -39,7 +39,11 @@
         <div class="row">
             <div class="col-lg-8 col-md-10 mx-auto">
                 <p>${articulo.getBody()}</p>
-                <blockquote class="blockquote">${articulo.getStringEtiqueta()}</blockquote>
+                <ul>
+                    <#list articulo.getLabels() as etiqueta>
+                        <li><p class="badge badge-light">${etiqueta.getLabelText()}</p></li>
+                    </#list>
+                </ul>
             </div>
         </div>
     </div>
@@ -50,7 +54,7 @@
         <div class="col-lg-8 col-md-10 mx-auto">
             <h6 class="blockquote">Comentarios</h6>
             <ul>
-                <#list list as comentario >
+                <#list articulo.getComments() as comentario >
                     <div class="card mr-2 mb-0">
                         <div class="card-body">
                             <h5 class="card-title"> ${comentario.getUser().name}</h5>

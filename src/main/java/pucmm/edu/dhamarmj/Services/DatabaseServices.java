@@ -1,10 +1,11 @@
 package pucmm.edu.dhamarmj.Services;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Id;
-import javax.persistence.Persistence;
+import pucmm.edu.dhamarmj.Encapsulation.Article;
+
+import javax.persistence.*;
+import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import java.lang.reflect.Field;
 import java.util.List;
 
@@ -137,6 +138,23 @@ public class DatabaseServices<T> {
             CriteriaQuery<T> criteriaQuery = em.getCriteriaBuilder().createQuery(claseEntidad);
             criteriaQuery.select(criteriaQuery.from(claseEntidad));
             return em.createQuery(criteriaQuery).getResultList();
+        } catch (Exception ex){
+            throw  ex;
+        }finally {
+            em.close();
+        }
+    }
+    public List<T> findPagination(int page, int size){
+        EntityManager em = getEntityManager();
+        try{
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<T> criteriaQuery = cb.createQuery(claseEntidad);
+            Root<T> from = criteriaQuery.from(claseEntidad);
+            CriteriaQuery<T> select = criteriaQuery.select(from);
+            Query query = em.createQuery(select);
+            query.setFirstResult((page-1) * size);
+            query.setMaxResults(size);
+            return  query.getResultList();
         } catch (Exception ex){
             throw  ex;
         }finally {

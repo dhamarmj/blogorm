@@ -76,7 +76,7 @@ public class Article implements Serializable {
         this.likes = likes;
     }
 
-    public void updateLikes() {
+    public void updateLikes(User CurrentUser) {
         if (addLike)
             this.likes++;
         else

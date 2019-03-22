@@ -1,6 +1,7 @@
 package pucmm.edu.dhamarmj.Handler;
 
 import freemarker.template.Configuration;
+import org.h2.store.PageStreamTrunk;
 import pucmm.edu.dhamarmj.Encapsulation.*;
 import pucmm.edu.dhamarmj.Services.*;
 import pucmm.edu.dhamarmj.transformation.JsonTransformer;
@@ -10,6 +11,7 @@ import spark.Session;
 import spark.template.freemarker.FreeMarkerEngine;
 import sun.awt.geom.AreaOp;
 
+import javax.jws.soap.SOAPBinding;
 import java.util.*;
 
 import static spark.Spark.*;
@@ -18,13 +20,16 @@ import static spark.Spark.before;
 public class MainHandler {
 
     public MainHandler() {
-       // System.out.println(encryptPassword("admin"));
-//      List<Article> arts =  ArticleServices.getInstancia().findAllByLabel(65);
-//      System.out.println(arts.size());
+//        System.out.println(encryptPassword("admin"));
+//        List<Article> arts = ArticleServices.getInstancia().getLabelArticles(65);
+//        System.out.println(arts.size());
     }
 
 
     User currentUser;
+    int pageSize = 5;
+    int currentPage=1;
+    int totalPages=1;
 
     public void startup() {
         staticFiles.location("/publico");
@@ -34,7 +39,9 @@ public class MainHandler {
         FreeMarkerEngine freeMarkerEngine = new FreeMarkerEngine(configuration);
 
         get("/", (request, response) -> {
-            List<Article> articulo = ArticleServices.getInstancia().findAll();
+            currentPage =  request.queryParams("page") != null && !request.queryParams("page").isEmpty() ? Integer.parseInt(request.queryParams("page")) : 1;
+            List<Article> articulo = ArticleServices.getInstancia().paginateArticles(currentPage);
+            StartUser();
             String user = request.cookie("LoginU");
             if (user != null) {
                 String passw = Encryption.Decrypt(request.cookie("LoginP"));
@@ -43,14 +50,8 @@ public class MainHandler {
                 CreateSession(request, currentUser);
             }
             currentUser = getSessionUsuario(request);
-            Map<String, Object> attributes = validateUSer();
-            if (currentUser != null) {
-                attributes.put("currentUserId", String.valueOf(currentUser.getId()));
-            } else {
-                attributes.put("currentUserId", "0");
-            }
-            Collections.sort(articulo, (Article p1, Article p2) -> p2.getFecha().compareTo(p1.getFecha()));
-            attributes.put("list",articulo);
+            Map<String, Object> attributes = ShowHomeAttributes(articulo);
+            attributes.put("fromLabel", false);
             return new ModelAndView(attributes, "home.ftl");
         }, freeMarkerEngine);
 
@@ -125,6 +126,16 @@ public class MainHandler {
             return null;
         }, freeMarkerEngine);
 
+        get("/Articles/:label", (request, response) -> {
+            currentPage =  request.queryParams("page") != null && !request.queryParams("page").isEmpty() ? Integer.parseInt(request.queryParams("page")) : 1;
+            Label label = LabelServices.getInstancia().getLabel(request.params("label"));
+            List<Article> art = ArticleServices.getInstancia().getLabelArticles(label.getId(), currentPage);
+            Map<String, Object> attributes = ShowHomeAttributes(art);
+            attributes.put("fromLabel", true);
+            return new ModelAndView(attributes, "home.ftl");
+        }, freeMarkerEngine);
+
+
         get("/Admin/Modify/:idpost", (request, response) -> {
             Map<String, Object> attributes = getArticle(request.params("idpost"));
             attributes.remove("list");
@@ -164,29 +175,38 @@ public class MainHandler {
         get("/addlike/:idpost", (request, response) -> {
             response.header("Content-type", "application/json");
             Article art = ArticleServices.getInstancia().find(Long.parseLong(request.params("idpost")));
-            art.updateLikes();
+            art.updateLikes(currentUser);
             ArticleServices.getInstancia().editar(art);
             art.setLabels(null);
             return art;
         }, new JsonTransformer());
 
-//        get("/Articles/:etiquetaName", (request, response) -> {
-//            List<Label> labels = LabelServices.getInstancia().findAll();
-//            Article art = ArticleServices.getInstancia().find(Long.parseLong(request.params("idpost")));
-//            art.updateLikes();
-//            ArticleServices.getInstancia().editar(art);
-//            art.setLabels(null);
-//            return art;
-//        }, new JsonTransformer());
-
         get("/LogOut/", (request, response) -> {
             request.session().removeAttribute("usuario");
             request.session().invalidate();
+            currentUser = null;
             response.removeCookie("/", "LoginU");
             response.removeCookie("/", "LoginP");
             response.redirect("/");
             return null;
         }, freeMarkerEngine);
+    }
+
+    private Map<String, Object> ShowHomeAttributes(List<Article> art) {
+        Map<String, Object> attributes = validateUSer();
+        if (currentUser != null) {
+            attributes.put("currentUserId", String.valueOf(currentUser.getId()));
+        } else {
+            attributes.put("currentUserId", "0");
+        }
+        attributes.put("list", art);
+
+        totalPages = GetPageTotal();
+        attributes.put("nextPagina", currentPage+1);
+        attributes.put("pastPagina", currentPage-1);
+        attributes.put("ultimaPagina", totalPages);
+
+        return attributes;
     }
 
     private Set<Label> getEtiquetas(String values) {
@@ -207,15 +227,9 @@ public class MainHandler {
     private Map<String, Object> getArticle(String request) {
         Map<String, Object> attributes = validateUSer();
         Article Ar = ArticleServices.getInstancia().find(Long.parseLong(request));
-        //  Ar.setListaComentarios(comentarioServices.getComentario(Ar));
-        //  LoadEtiquetasInArticulo(Ar);
         attributes.put("articulo", Ar);
-        attributes.put("list", Ar.getComments());
+        // attributes.put("list", Ar.getComments());
         return attributes;
-    }
-
-    private void SortList(List<Article> articles){
-
     }
 
     private User getSessionUsuario(Request request) {
@@ -248,6 +262,15 @@ public class MainHandler {
         return getHash(txt, "MD5");
     }
 
+    private int GetPageTotal() {
+        int countResults = ArticleServices.getInstancia().findAll().size();
+        int PageTotal = (int) (Math.ceil(countResults / pageSize));
+        if(countResults / pageSize % 1 == 0){
+            PageTotal++;
+        }
+        return PageTotal;
+    }
+
     private Map<String, Object> validateUSer() {
         Map<String, Object> attributes = new HashMap<>();
         if (currentUser == null) {
@@ -267,5 +290,15 @@ public class MainHandler {
         return attributes;
     }
 
+    private void StartUser() {
+        User a = UserServices.getInstancia().findAll().get(0);
+        if (a == null) {
+            UserServices.getInstancia().crear(new User("admin",
+                    "admin",
+                    encryptPassword("admin"),
+                    true,
+                    true));
+        }
+    }
 
 }
