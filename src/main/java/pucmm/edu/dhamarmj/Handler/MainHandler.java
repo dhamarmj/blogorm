@@ -76,8 +76,8 @@ public class MainHandler {
         }, freeMarkerEngine);
 
         post("/logInUser/", (request, response) -> {
-            User user = UserServices.getInstancia().getUser(request.queryParams("username"), encryptPassword(request.queryParams("password")));
-            if (user != null) {
+                User user = UserServices.getInstancia().getUser(request.queryParams("username"), encryptPassword(request.queryParams("password")));
+                if (user != null) {
                 CreateSession(request, user);
                 boolean remember = Boolean.parseBoolean(request.queryParams("remember"));
                 if (remember) {

@@ -23,20 +23,7 @@ public class ArticleServices extends DatabaseServices<Article> {
         return instancia;
     }
 
-    //    /**
-//     *
-//     * @param nombre
-//     * @return
-//     */s
-//    public List<Article> findAllByLabel(int id){
-//        EntityManager em = getEntityManager();
-//        Query query = em.createQuery("select e from Article e " +
-//                "inner join ARTICLE_LABEL a on a.FK_LABEL = e.id " +
-//                "where a.FK_LABEL like :labelId");
-//        query.setParameter("labelId", id);
-//        List<Article> lista = query.getResultList();
-//        return lista;
-//    }
+
     public List<Article> getLabelArticles(long labelid, int lastPageNumber) {
         EntityManager em = getEntityManager();
         Query query = em.createQuery("select e from Article e join e.labels l where l.id like :labelid order by e.fecha desc", Article.class);
@@ -45,6 +32,7 @@ public class ArticleServices extends DatabaseServices<Article> {
         query.setMaxResults(pageSize);
         return query.getResultList();
     }
+
 
     public List<Article> paginateArticles(int lastPageNumber) {
         EntityManager em = getEntityManager();

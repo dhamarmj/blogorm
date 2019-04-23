@@ -17,8 +17,8 @@ public class Article implements Serializable {
     private String body;
     private Date fecha;
     private String teaser;
-    private String stringEtiqueta = "";
     private int likes;
+    private String stringEtiqueta = "";
     @NotNull // JSR303
     @Column(nullable = false) // Hibernate / JPA
    private boolean addLike=true;
